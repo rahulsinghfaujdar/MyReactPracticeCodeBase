@@ -1,4 +1,9 @@
-import { GET_PRODUCTS_LIST } from './Constants.js'
+import { fetchAuthSession } from 'aws-amplify/auth';
+import {
+  AWS_PRODUCTS_API_URL,
+  GET_PRODUCTS_LIST,
+  isAWSNetworking,
+} from './Constants.js';
 
 export async function getProductsListfromApi(
   onProductsListLoading,
@@ -7,15 +12,36 @@ export async function getProductsListfromApi(
 ) {
   try {
     onProductsListLoading(true);
-    const response = await fetch(GET_PRODUCTS_LIST);
+
+    let url = GET_PRODUCTS_LIST;
+    const requestOptions = { headers: { Accept: 'application/json' } };
+    if (isAWSNetworking) {
+      if (!AWS_PRODUCTS_API_URL) {
+        throw new Error('VITE_AWS_PRODUCTS_API_URL is required when isAWSNetworking is true.');
+      }
+
+      const session = await fetchAuthSession();
+      const idToken = session.tokens?.idToken?.toString();
+      if (!idToken) {
+        throw new Error('A signed-in Cognito session is required to load products from AWS.');
+      }
+
+      url = AWS_PRODUCTS_API_URL;
+      requestOptions.headers.Authorization = idToken;
+    }
+
+    const response = await fetch(url, requestOptions);
     if (!response.ok) {
-      throw new Error(`${response.status} - ${response.statusText}`);
+      const responseBody = await response.text();
+      throw new Error(
+        `${response.status} - ${response.statusText}${responseBody ? `: ${responseBody}` : ''}`
+      );
     }
 
     const contentType = response.headers.get('content-type') ?? '';
     if (!contentType.includes('application/json')) {
       throw new Error(
-        `Expected a JSON response from ${GET_PRODUCTS_LIST}, but received ${contentType || 'an unknown content type'}. Check the products API URL.`
+        `Expected a JSON response from ${url}, but received ${contentType || 'an unknown content type'}. Check the products API URL.`
       );
     }
 

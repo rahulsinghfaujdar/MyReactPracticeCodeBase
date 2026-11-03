@@ -13,6 +13,7 @@
     "start": "npm run preview"
   },
   "dependencies": {
+    "aws-amplify": "^6.22.2",
     "react": "^19.2.7",
     "react-dom": "^19.2.7"
   },

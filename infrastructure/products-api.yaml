@@ -1,0 +1,178 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Cognito-protected products API backed by DynamoDB.
+
+Parameters:
+  UserPoolId:
+    Type: String
+    Description: Cognito User Pool ID used to authorize products API requests.
+  UserPoolClientId:
+    Type: String
+    Description: Cognito public app client ID accepted by the API authorizer.
+
+Resources:
+  ProductsTable:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      TableName: MyReactPracticeCodeBaseProducts
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: N
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+
+  ProductsApiLogGroup:
+    Type: AWS::Logs::LogGroup
+    DeletionPolicy: Retain
+    Properties:
+      LogGroupName: /aws/lambda/MyReactPracticeCodeBaseProductsApi
+      RetentionInDays: 14
+
+  ProductsApiRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: ReadProductsAndWriteFunctionLogs
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - dynamodb:Scan
+                Resource: !GetAtt ProductsTable.Arn
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource: !Sub '${ProductsApiLogGroup.Arn}:*'
+
+  ProductsApiFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: MyReactPracticeCodeBaseProductsApi
+      Runtime: python3.12
+      Handler: index.handler
+      Role: !GetAtt ProductsApiRole.Arn
+      Timeout: 10
+      MemorySize: 128
+      Environment:
+        Variables:
+          PRODUCTS_TABLE_NAME: !Ref ProductsTable
+      Code:
+        ZipFile: |
+          import json
+          import os
+          import boto3
+
+          table = boto3.resource("dynamodb").Table(os.environ["PRODUCTS_TABLE_NAME"])
+          response_headers = {
+              "content-type": "application/json",
+              "cache-control": "no-store",
+          }
+
+          def handler(event, context):
+              try:
+                  products = []
+                  result = table.scan()
+                  while True:
+                      for item in result.get("Items", []):
+                          products.append({
+                              "id": int(item["id"]),
+                              "title": item["title"],
+                              "description": item["description"],
+                              "availabilityStatus": item.get("availabilityStatus", ""),
+                              "thumbnail": item["thumbnail"],
+                          })
+                      if "LastEvaluatedKey" not in result:
+                          break
+                      result = table.scan(ExclusiveStartKey=result["LastEvaluatedKey"])
+
+                  products.sort(key=lambda product: product["id"])
+                  return {
+                      "statusCode": 200,
+                      "headers": response_headers,
+                      "body": json.dumps({"products": products}),
+                  }
+              except Exception:
+                  print("Failed to load products from DynamoDB")
+                  raise
+
+  ProductsHttpApi:
+    Type: AWS::ApiGatewayV2::Api
+    Properties:
+      Name: MyReactPracticeCodeBaseProductsApi
+      ProtocolType: HTTP
+      CorsConfiguration:
+        AllowOrigins:
+          - '*'
+        AllowMethods:
+          - GET
+          - OPTIONS
+        AllowHeaders:
+          - authorization
+          - content-type
+        MaxAge: 3600
+
+  ProductsJwtAuthorizer:
+    Type: AWS::ApiGatewayV2::Authorizer
+    Properties:
+      ApiId: !Ref ProductsHttpApi
+      Name: CognitoUserPoolAuthorizer
+      AuthorizerType: JWT
+      IdentitySource:
+        - $request.header.Authorization
+      JwtConfiguration:
+        Issuer: !Sub 'https://cognito-idp.${AWS::Region}.amazonaws.com/${UserPoolId}'
+        Audience:
+          - !Ref UserPoolClientId
+
+  ProductsApiIntegration:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties:
+      ApiId: !Ref ProductsHttpApi
+      IntegrationType: AWS_PROXY
+      IntegrationUri: !GetAtt ProductsApiFunction.Arn
+      PayloadFormatVersion: '2.0'
+
+  ProductsApiRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref ProductsHttpApi
+      RouteKey: GET /products
+      AuthorizationType: JWT
+      AuthorizerId: !Ref ProductsJwtAuthorizer
+      Target: !Sub 'integrations/${ProductsApiIntegration}'
+
+  ProductsApiStage:
+    Type: AWS::ApiGatewayV2::Stage
+    Properties:
+      ApiId: !Ref ProductsHttpApi
+      StageName: '$default'
+      AutoDeploy: true
+
+  AllowHttpApiInvoke:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref ProductsApiFunction
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub 'arn:${AWS::Partition}:execute-api:${AWS::Region}:${AWS::AccountId}:${ProductsHttpApi}/*/GET/products'
+
+Outputs:
+  ProductsApiUrl:
+    Description: Cognito-protected products endpoint.
+    Value: !Sub '${ProductsHttpApi.ApiEndpoint}/products'
+  ProductsTableName:
+    Value: !Ref ProductsTable
+  ProductsLambdaFunctionName:
+    Value: !Ref ProductsApiFunction
