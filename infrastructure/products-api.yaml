@@ -24,6 +24,90 @@ Resources:
         - AttributeName: id
           KeyType: HASH
 
+  ProductsAppSyncRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: appsync.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: ReadProductsFromDynamoDB
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - dynamodb:Scan
+                Resource: !GetAtt ProductsTable.Arn
+
+  ProductsGraphQLApi:
+    Type: AWS::AppSync::GraphQLApi
+    Properties:
+      Name: MyReactPracticeCodeBaseProducts
+      AuthenticationType: AMAZON_COGNITO_USER_POOLS
+      UserPoolConfig:
+        AwsRegion: !Ref AWS::Region
+        UserPoolId: !Ref UserPoolId
+        DefaultAction: ALLOW
+      XrayEnabled: true
+
+  ProductsGraphQLSchema:
+    Type: AWS::AppSync::GraphQLSchema
+    Properties:
+      ApiId: !GetAtt ProductsGraphQLApi.ApiId
+      Definition: |
+        type Product {
+          id: Int!
+          title: String!
+          description: String!
+          availabilityStatus: String
+          thumbnail: String!
+        }
+
+        type Query {
+          listProducts: [Product!]!
+        }
+
+        schema {
+          query: Query
+        }
+
+  ProductsAppSyncDataSource:
+    Type: AWS::AppSync::DataSource
+    Properties:
+      ApiId: !GetAtt ProductsGraphQLApi.ApiId
+      Name: ProductsDynamoDB
+      Type: AMAZON_DYNAMODB
+      ServiceRoleArn: !GetAtt ProductsAppSyncRole.Arn
+      DynamoDBConfig:
+        AwsRegion: !Ref AWS::Region
+        TableName: !Ref ProductsTable
+
+  ListProductsResolver:
+    Type: AWS::AppSync::Resolver
+    DependsOn: ProductsGraphQLSchema
+    Properties:
+      ApiId: !GetAtt ProductsGraphQLApi.ApiId
+      TypeName: Query
+      FieldName: listProducts
+      DataSourceName: !GetAtt ProductsAppSyncDataSource.Name
+      Kind: UNIT
+      RequestMappingTemplate: |
+        {
+          "version": "2018-05-29",
+          "operation": "Scan",
+          "limit": 1000
+        }
+      ResponseMappingTemplate: |
+        #if($ctx.error)
+          $util.error($ctx.error.message, $ctx.error.type)
+        #end
+        $util.toJson($ctx.result.items)
+
   ProductsApiLogGroup:
     Type: AWS::Logs::LogGroup
     DeletionPolicy: Retain
@@ -180,6 +264,11 @@ Resources:
       SourceArn: !Sub 'arn:${AWS::Partition}:execute-api:${AWS::Region}:${AWS::AccountId}:${ProductsHttpApi}/*/GET/products'
 
 Outputs:
+  ProductsGraphQLUrl:
+    Description: Cognito-protected AppSync GraphQL endpoint.
+    Value: !GetAtt ProductsGraphQLApi.GraphQLUrl
+  ProductsGraphQLApiId:
+    Value: !GetAtt ProductsGraphQLApi.ApiId
   ProductsApiUrl:
     Description: Cognito-protected products endpoint.
     Value: !Sub '${ProductsHttpApi.ApiEndpoint}/products'
