@@ -9,16 +9,22 @@ export async function getProductsListfromApi(
     onProductsListLoading(true);
     const response = await fetch(GET_PRODUCTS_LIST);
     if (!response.ok) {
-      const error = { message: `${response.status} - ${response.statusText}` }
-      onProductsListError(error);
-      throw new Error(error);
+      throw new Error(`${response.status} - ${response.statusText}`);
     }
+
+    const contentType = response.headers.get('content-type') ?? '';
+    if (!contentType.includes('application/json')) {
+      throw new Error(
+        `Expected a JSON response from ${GET_PRODUCTS_LIST}, but received ${contentType || 'an unknown content type'}. Check the products API URL.`
+      );
+    }
+
     const resJson = await response.json();
     const products = Array.isArray(resJson?.products) ? resJson?.products : [];
     onProductsListSuccess(products);
   }
   catch (error) {
-    console.log(`Error : ${error}`);
+    console.error('Unable to load the products list:', error);
     onProductsListError(error);
   }
   finally {
