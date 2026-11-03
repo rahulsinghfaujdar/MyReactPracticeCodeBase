@@ -54,3 +54,41 @@ environment. Vite embeds this value at build time, so rebuild/redeploy the app
 after changing it. The API requires a Cognito ID token; the app supplies it
 from the current signed-in session. The DynamoDB table uses on-demand billing
 and is retained when the stack is deleted.
+
+## CloudWatch logging
+
+CloudTrail Lake is not used. The existing standard CloudTrail trail delivers
+AWS audit events to CloudWatch Logs and continues to archive them in S3.
+CloudTrail is the event source; CloudWatch Logs is where those audit events are
+stored and queried. Cognito sign-up and sign-in events can take several minutes
+to arrive.
+
+The products API stack also configures API Gateway access logs and Lambda
+runtime logs in `ap-south-1`:
+
+- `/aws/apigateway/MyReactPracticeCodeBaseProductsApi` — request ID, route,
+  status, response size, source IP, Cognito subject, and integration errors.
+- `/aws/lambda/MyReactPracticeCodeBaseProductsApi` — Lambda runtime/errors.
+- The trail's configured `aws-cloudtrail-logs-*` group — Cognito and other AWS
+  management audit events.
+
+The API access and Lambda log groups retain logs for 14 days. The API access
+format intentionally does not include request headers or authentication tokens.
+
+Example CloudWatch Logs Insights queries:
+
+```text
+fields @timestamp, requestId, routeKey, status, sourceIp, authorizerSubject, integrationError
+| sort @timestamp desc
+| limit 100
+```
+
+```text
+fields @timestamp, eventSource, eventName, eventTime, errorCode, errorMessage
+| filter eventSource = "cognito-idp.amazonaws.com"
+| sort @timestamp desc
+| limit 100
+```
+
+Open **CloudWatch → Logs Insights**, select the relevant log group(s), select
+region `ap-south-1`, and run the matching query.

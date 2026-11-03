@@ -31,6 +31,13 @@ Resources:
       LogGroupName: /aws/lambda/MyReactPracticeCodeBaseProductsApi
       RetentionInDays: 14
 
+  ProductsApiAccessLogGroup:
+    Type: AWS::Logs::LogGroup
+    DeletionPolicy: Retain
+    Properties:
+      LogGroupName: /aws/apigateway/MyReactPracticeCodeBaseProductsApi
+      RetentionInDays: 14
+
   ProductsApiRole:
     Type: AWS::IAM::Role
     Properties:
@@ -159,6 +166,10 @@ Resources:
       ApiId: !Ref ProductsHttpApi
       StageName: '$default'
       AutoDeploy: true
+      AccessLogSettings:
+        DestinationArn: !GetAtt ProductsApiAccessLogGroup.Arn
+        Format: >-
+          {"requestId":"$context.requestId","requestTime":"$context.requestTime","sourceIp":"$context.identity.sourceIp","routeKey":"$context.routeKey","status":"$context.status","responseLength":"$context.responseLength","authorizerSubject":"$context.authorizer.jwt.claims.sub","integrationError":"$context.integrationErrorMessage"}
 
   AllowHttpApiInvoke:
     Type: AWS::Lambda::Permission

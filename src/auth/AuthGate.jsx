@@ -2,7 +2,7 @@ import React from 'react';
 import { getCurrentUser, signOut } from 'aws-amplify/auth';
 import { isAuthConfigured } from './authConfig.js';
 import AuthForm from './AuthForm.jsx';
-import authBackground from '../assets/images/bg_react.jpg';
+const authBackground = `${import.meta.env.BASE_URL}bg_react.jpg`;
 
 const AuthGate = ({ children }) => {
   const [user, setUser] = React.useState(null);
