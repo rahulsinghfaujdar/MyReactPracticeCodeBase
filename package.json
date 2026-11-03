@@ -1,0 +1,23 @@
+{
+  "name": "react",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "install:deps": "npm install",
+    "dev": "vite --mode development",
+    "build": "npm run build:prod",
+    "build:dev": "vite build --mode development --base ./",
+    "build:prod": "vite build --mode production --base ./",
+    "preview": "vite preview",
+    "start": "npm run preview"
+  },
+  "dependencies": {
+    "react": "^19.2.7",
+    "react-dom": "^19.2.7"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.3.4",
+    "vite": "^5.0.8"
+  }
+}
