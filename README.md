@@ -18,6 +18,7 @@ REST endpoint, and DummyJSON.
 - [Build and deploy](#build-and-deploy)
 - [Logging and troubleshooting](#logging-and-troubleshooting)
 - [Security notes](#security-notes)
+- [Step-by-step AWS service guides](#step-by-step-aws-service-guides)
 
 ## Features and use cases
 
@@ -358,3 +359,11 @@ environment variables if requests fail.
 - The identity pool is not required for this User Pool-authenticated flow.
 - Do not log or share passwords, confirmation codes, access tokens, ID tokens,
   or AWS credentials.
+
+## Step-by-step AWS service guides
+
+See the [AWS implementation guide index](./documents/README.md) for practical
+React and AWS walkthroughs covering Amplify Hosting and environments, Cognito,
+S3, DynamoDB, AppSync, Lambda, CloudFront, CloudWatch, CloudTrail, IAM, and API
+Gateway. Each guide distinguishes the services used by this project from
+optional extensions.
