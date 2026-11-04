@@ -362,8 +362,9 @@ environment variables if requests fail.
 
 ## Step-by-step AWS service guides
 
-See the [AWS implementation guide index](./documents/README.md) for practical
-React and AWS walkthroughs covering Amplify Hosting and environments, Cognito,
-S3, DynamoDB, AppSync, Lambda, CloudFront, CloudWatch, CloudTrail, IAM, and API
-Gateway. Each guide distinguishes the services used by this project from
-optional extensions.
+Start with the [end-to-end AWS integration runbook](./documents/aws/README.md)
+for project wiring, AWS Console setup, CLI commands, and runtime requests/events.
+The [AWS implementation guide index](./documents/README.md) links to detailed
+walkthroughs for Amplify Hosting, Cognito, S3, DynamoDB, AppSync, Lambda,
+CloudFront, CloudWatch, CloudTrail, IAM, and API Gateway. Each guide
+distinguishes services used by this project from optional extensions.

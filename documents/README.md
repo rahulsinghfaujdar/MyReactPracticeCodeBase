@@ -8,6 +8,7 @@ v6 setup. Follow the links for the service or workflow you need.
 
 | Guide | Covers |
 | --- | --- |
+| [End-to-end AWS integration runbook](./aws/README.md) | Project and Console setup, CLI commands, runtime requests and verification |
 | [Amplify](./aws/amplify/README.md) | Hosting, branches and multi-environment deployments, build variables, secrets |
 | [Cognito](./aws/cognito/README.md) | User Pools, Identity Pools, email/password authentication and React |
 | [S3](./aws/s3/README.md) | Public/private buckets, browser uploads/downloads and CloudFront delivery |
@@ -24,14 +25,17 @@ For quick service reminders, see the [AWS sticky notes](./short_notes/README.md)
 
 ## How to use these guides
 
-1. Start with Amplify and Cognito when creating a frontend environment.
-2. Choose **AppSync** for GraphQL backed by DynamoDB, or **API Gateway and
+1. Start with the [end-to-end AWS integration runbook](./aws/README.md) for
+   project wiring, Console setup, deployment commands and runtime events.
+2. Start with Cognito when creating the authentication environment, and
+   Amplify when creating the frontend hosting environment.
+3. Choose **AppSync** for GraphQL backed by DynamoDB, or **API Gateway and
    Lambda** for REST. You usually do not need both.
-3. Use DynamoDB as a backend data store; do not connect a browser directly with
+4. Use DynamoDB as a backend data store; do not connect a browser directly with
    AWS access keys.
-4. Add S3 only when the app needs object/file storage. Use CloudFront when
+5. Add S3 only when the app needs object/file storage. Use CloudFront when
    controlled, cached distribution is needed.
-5. Apply the IAM guide to every role before deployment; log and monitor with
+6. Apply the IAM guide to every role before deployment; log and monitor with
    CloudWatch and, for AWS account audit events, CloudTrail.
 
 The root [project README](../README.md) describes the current app. In this
