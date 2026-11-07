@@ -12,6 +12,8 @@ v6 setup. Follow the links for the service or workflow you need.
 | [Amplify](./aws/amplify/README.md) | Hosting, branches and multi-environment deployments, build variables, secrets |
 | [Cognito](./aws/cognito/README.md) | User Pools, Identity Pools, email/password authentication and React |
 | [S3](./aws/s3/README.md) | Public/private buckets, browser uploads/downloads and CloudFront delivery |
+| [S3 static website deployment](./aws/s3/static-website/README.md) | Public S3 website hosting, website endpoint, policy, and 403/404 troubleshooting |
+| [Private S3 + CloudFront deployment](./aws/s3/cloudfront-private/README.md) | OAC, private bucket policy, HTTPS/TLS, cache behavior, logs, and errors |
 | [DynamoDB](./aws/dynamodb/README.md) | Table design, least-privilege access, sample-data import and React access patterns |
 | [AppSync](./aws/appsync/README.md) | GraphQL schema, Cognito authorization, DynamoDB resolver and Amplify client |
 | [Lambda](./aws/lambda/README.md) | Node.js/Python functions, IAM roles, API handlers and CloudWatch logs |

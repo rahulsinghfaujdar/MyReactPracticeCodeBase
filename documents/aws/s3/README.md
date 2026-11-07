@@ -17,6 +17,14 @@ authenticated API.
 This app currently serves `public/bg_react.jpg` from Amplify Hosting; it does
 not require S3 Storage.
 
+For end-to-end deployment of the Vite app, choose one of these separate
+hosting patterns:
+
+- [Deploy as a public S3 static website](./static-website/README.md): direct
+  S3 website endpoint over HTTP; bucket objects are public.
+- [Deploy through CloudFront with a private S3 bucket](./cloudfront-private/README.md):
+  CloudFront OAC, private bucket, and HTTPS for the distribution domain.
+
 ## 2. Create a private bucket
 
 1. Choose the application region and a globally unique bucket name.
